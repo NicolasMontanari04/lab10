@@ -1,15 +1,16 @@
 package it.unibo.mvc;
 
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.List;
 
 /**
  */
 public final class DrawNumberApp implements DrawNumberViewObserver {
-    private static final int MIN = 0;
-    private static final int MAX = 100;
-    private static final int ATTEMPTS = 10;
 
     private final DrawNumber model;
     private final List<DrawNumberView> views;
@@ -27,7 +28,46 @@ public final class DrawNumberApp implements DrawNumberViewObserver {
             view.setObserver(this);
             view.start();
         }
-        this.model = new DrawNumberImpl(MIN, MAX, ATTEMPTS);
+
+        final Configuration.Builder builder = new Configuration.Builder();
+
+        try (InputStream input = DrawNumberApp.class.getResourceAsStream("/config.yml");
+             BufferedReader reader = new BufferedReader(new InputStreamReader(input))) {
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim(); // Rimuove spazi bianchi iniziali e finali
+                if (line.startsWith("minimum:")) {
+                    builder.setMin(Integer.parseInt(line.split(":")[1].trim()));
+                    System.out.println("MIN: " + Integer.parseInt(line.split(":")[1].trim()));
+                } else if (line.startsWith("maximum:")) {
+                    builder.setMax(Integer.parseInt(line.split(":")[1].trim()));
+                    System.out.println("MAX: " + Integer.parseInt(line.split(":")[1].trim()));
+                } else if (line.startsWith("attempts:")) {
+                    builder.setAttempts(Integer.parseInt(line.split(":")[1].trim()));
+                    System.out.println("ATTEMPS: " + Integer.parseInt(line.split(":")[1].trim()));
+                }
+            }
+        } catch (IOException e) {
+            displayError(e.getMessage());
+        }
+        final Configuration configuration = builder.build();
+        if (configuration.isConsistent()) {
+            this.model = new DrawNumberImpl(configuration);
+        } else {
+            displayError("Inconsistent configuration: "
+                + "min: " + configuration.getMin() + ", "
+                + "max: " + configuration.getMax() + ", "
+                + "attempts: " + configuration.getAttempts() + ". Using defaults instead.");
+            this.model = new DrawNumberImpl(new Configuration.Builder().build());
+        }
+
+    }
+
+    private void displayError(final String error) {
+        for (final DrawNumberView view: views) {
+            view.displayError(error);
+        }
     }
 
     @Override
