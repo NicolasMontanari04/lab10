@@ -19,7 +19,7 @@ public final class DrawNumberApp implements DrawNumberViewObserver {
      * @param views
      *            the views to attach
      */
-    public DrawNumberApp(final DrawNumberView... views) {
+    public DrawNumberApp(final String config, final DrawNumberView... views) {
         /*
          * Side-effect proof
          */
@@ -55,10 +55,7 @@ public final class DrawNumberApp implements DrawNumberViewObserver {
         if (configuration.isConsistent()) {
             this.model = new DrawNumberImpl(configuration);
         } else {
-            displayError("Inconsistent configuration: "
-                + "min: " + configuration.getMin() + ", "
-                + "max: " + configuration.getMax() + ", "
-                + "attempts: " + configuration.getAttempts() + ". Using defaults instead.");
+            displayError("Inconsistent configuration: " + "min: " + configuration.getMin() + ", " + "max: " + configuration.getMax() + ", " + "attempts: " + configuration.getAttempts() + ". Using defaults instead.");
             this.model = new DrawNumberImpl(new Configuration.Builder().build());
         }
 
@@ -106,7 +103,14 @@ public final class DrawNumberApp implements DrawNumberViewObserver {
      * @throws FileNotFoundException 
      */
     public static void main(final String... args) throws FileNotFoundException {
-        new DrawNumberApp(new DrawNumberViewImpl());
-    }
+        String configPath = "config.yml"; 
+        DrawNumberView view1 = new DrawNumberViewImpl();
+        DrawNumberView view2 = new DrawNumberViewImpl();
+        DrawNumberView view3 = new PrintStreamView(System.out);
+        DrawNumberView view4 = new PrintStreamView("output.log");
 
+        DrawNumberApp app = new DrawNumberApp(configPath, view1, view2, view3, view4);
+    }
 }
+
+
